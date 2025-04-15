@@ -75,7 +75,7 @@ static const char *allowed_url_prefix = "https://github.com/yukeippi";
  * Check if the URL starts with the specified prefix.
  * Return 1 if it does, 0 otherwise.
  */
-static int is_allowed_url(const char *url)
+int is_allowed_url(const char *url)
 {
 	if (!url || !*url)
 		return 1; /* Empty URL is allowed */

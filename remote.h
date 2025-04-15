@@ -455,4 +455,10 @@ char *relative_url(const char *remote_url, const char *url,
 
 int valid_remote_name(const char *name);
 
+/*
+ * Check if the URL starts with the allowed prefix.
+ * Return 1 if it does, 0 otherwise.
+ */
+int is_allowed_url(const char *url);
+
 #endif

@@ -1396,6 +1396,16 @@ int transport_push(struct repository *r,
 	struct transport_ls_refs_options transport_options =
 		TRANSPORT_LS_REFS_OPTIONS_INIT;
 
+	/* プッシュ時にURLをチェック */
+	if (!is_allowed_url(transport->url)) {
+		const char *allowed_prefix;
+		/* allowed_url_prefixを取得するために一時的にremote.cの関数を呼び出す */
+		if (!git_config_get_string_tmp("remote.allowedUrlPrefix", &allowed_prefix))
+			die(_("URL '%s' is not allowed for pushing. Only URLs starting with '%s' are permitted."), transport->url, allowed_prefix);
+		else
+			die(_("URL '%s' is not allowed for pushing. Only URLs starting with the configured prefix are permitted."), transport->url);
+	}
+
 	*reject_reasons = 0;
 
 	if (transport_color_config() < 0)
