@@ -65,19 +65,41 @@ static char *alias_url(const char *url, struct rewrites *r)
 	return xstrfmt("%s%s", r->rewrite[longest_i]->base, url + longest->len);
 }
 
+/* 
+ * The allowed URL prefix for remote repositories.
+ * Change this value to modify the allowed URL pattern.
+ */
+static const char *allowed_url_prefix = "https://github.com/yukeippi";
+
+/*
+ * Check if the URL starts with the specified prefix.
+ * Return 1 if it does, 0 otherwise.
+ */
+int is_allowed_url(const char *url)
+{
+	if (!url || !*url)
+		return 1; /* Empty URL is allowed */
+		
+	return starts_with(url, allowed_url_prefix);
+}
+
 static void add_url(struct remote *remote, const char *url)
 {
-	if (*url)
+	if (*url) {
+		if (!is_allowed_url(url))
+			die(_("URL '%s' is not allowed. Only URLs starting with '%s' are permitted."), url, allowed_url_prefix);
 		strvec_push(&remote->url, url);
-	else
+	} else
 		strvec_clear(&remote->url);
 }
 
 static void add_pushurl(struct remote *remote, const char *pushurl)
 {
-	if (*pushurl)
+	if (*pushurl) {
+		if (!is_allowed_url(pushurl))
+			die(_("Push URL '%s' is not allowed. Only URLs starting with '%s' are permitted."), pushurl, allowed_url_prefix);
 		strvec_push(&remote->pushurl, pushurl);
-	else
+	} else
 		strvec_clear(&remote->pushurl);
 }
 
@@ -85,8 +107,13 @@ static void add_pushurl_alias(struct remote_state *remote_state,
 			      struct remote *remote, const char *url)
 {
 	char *alias = alias_url(url, &remote_state->rewrites_push);
-	if (alias)
+	if (alias) {
+		if (!is_allowed_url(alias)) {
+			free(alias);
+			die(_("Push URL alias '%s' is not allowed. Only URLs starting with '%s' are permitted."), url, allowed_url_prefix);
+		}
 		add_pushurl(remote, alias);
+	}
 	free(alias);
 }
 
@@ -94,7 +121,15 @@ static void add_url_alias(struct remote_state *remote_state,
 			  struct remote *remote, const char *url)
 {
 	char *alias = alias_url(url, &remote_state->rewrites);
-	add_url(remote, alias ? alias : url);
+	if (alias) {
+		if (!is_allowed_url(alias)) {
+			free(alias);
+			die(_("URL alias '%s' is not allowed. Only URLs starting with '%s' are permitted."), url, allowed_url_prefix);
+		}
+		add_url(remote, alias);
+	} else {
+		add_url(remote, url);
+	}
 	add_pushurl_alias(remote_state, remote, url);
 	free(alias);
 }
